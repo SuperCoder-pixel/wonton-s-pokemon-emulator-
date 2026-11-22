@@ -103,12 +103,11 @@
 
 <!-- ============ MAIN UI (hidden when this page is the popped-out game tab) ============ -->
 <div id="mainUI" class="wrap">
-  <div class="eyebrow">Local playback · nothing uploaded anywhere</div>
-  <h1>Drop in a cartridge.</h1>
+  <div class="eyebrow">I liek ducks · </div>
+  <h1>Do stuff or something.</h1>
   <p class="sub">
-    Accepts <b>.gba</b>, <b>.gbc / .gb</b>, and <b>.nds</b> ROM files you already own.
-    Everything runs in this browser tab — except Pokémon games, which pop out into
-    their own bare tab with nothing but the screen.
+    Accepts <b>.gba</b>, <b>.gbc / .gb</b>, and <b>.nds</b>.
+    If you want to have your game run in a new tab, just put pokemon in the name (I think)
   </p>
 
   <div class="chips">
@@ -119,7 +118,7 @@
 
   <div id="drop">
     <div class="icon">＋</div>
-    <div class="main-txt">Drag a ROM file here, or click to browse</div>
+    <div class="main-txt">Drag a ROM file here, or click to browse your files</div>
     <div class="sub-txt">.gba · .gbc · .gb · .nds</div>
   </div>
   <input id="fileInput" type="file" accept=".gba,.gbc,.gb,.nds">
@@ -128,14 +127,14 @@
   <div id="player" style="display:none"></div>
 
   <footer>
-    Detection is filename-based: any ROM whose name contains <code>pokemon</code> opens in a fresh tab
-    with only the game canvas — no menu, no header, nothing else. Everything else plays inline below.
+    Detection is filename-based: any ROM whose name contains <code>pokemon</code> opens in a new tab
+    with only the game canvas with nothing else. Everything else plays inline below.
   </footer>
 </div>
 
 <!-- ============ GAME-ONLY TAB (shown only when opened as ?tab=game&key=...) ============ -->
 <div id="gameRoot" style="display:none">
-  <div id="gameStatus"><div class="dot"></div><div id="gameStatusText">loading rom…</div></div>
+  <div id="gameStatus"><div class="dot"></div><div id="gameStatusText">loading ROM…</div></div>
   <div id="gameFrame" class="frame" style="display:none"></div>
 </div>
 
@@ -236,7 +235,7 @@
   async function handleFile(file) {
     const info = coreFor(file.name);
     if (!info) {
-      addRow(file.name, null, 'unsupported file type — use .gba, .gbc, .gb, or .nds');
+      addRow(file.name, null, 'unsupported file type use .gba, .gbc, .gb, or .nds, seriously though, did you not read what it says');
       return;
     }
 
