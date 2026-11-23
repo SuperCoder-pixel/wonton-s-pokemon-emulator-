@@ -241,3 +241,189 @@
     Accepts <code>.gba</code>, <code>.gbc </code>, and <code>.nds</code> files.
     If you want to have your game run in a new tab, just put pokemon in the file name (I think)
   </p>
+
+  <div class="chips">
+    <div class="chip gba"><b>GBA</b></div>
+    <div class="chip gbc"><b>GBC</b></div>
+    <div class="chip nds"><b>NDS</b></div>
+    <div class="chip hi"><b>Do these look cool?</b></div>
+  </div>
+
+  <div id="drop">
+    <div class="icon">＋</div>
+    <div class="main-txt">Drag a ROM hack here or click here to browse your files</div>
+  </div>
+  <input id="fileInput" type="file" accept=".gba,.gbc,.gb,.nds">
+
+  <div id="log"></div>
+  <div id="player" style="display:none"></div>
+
+  <footer>
+    Any ROM whose name contains <code>pokemon</code> opens in a new tab
+    with only the game and nothing else. Everything else plays below.
+  </footer>
+</div>
+
+<div id="gameRoot" style="display:none">
+  <div id="gameStatus">
+    <div class="dot"></div>
+    <div id="gameStatusText">loading ROM…</div>
+  </div>
+  <div id="gameFrame" class="frame" style="display:none"></div>
+</div>
+
+<script>
+const DB_NAME = 'cartridge-store';
+const STORE = 'roms';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveBlob(key, blob) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(blob, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadBlob(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getCore(filename) {
+  const ext = filename.toLowerCase().split('.').pop();
+  if (ext === 'gba') return { core: 'gba', label: 'GBA', badge: 'gba' };
+  if (ext === 'gbc' || ext === 'gb') return { core: 'gb', label: 'GBC', badge: 'gbc' };
+  if (ext === 'nds') return { core: 'nds', label: 'NDS', badge: 'nds' };
+  return null;
+}
+
+function bootEmulator(mountEl, blobUrl, core) {
+  window.EJS_player = mountEl;
+  window.EJS_gameUrl = blobUrl;
+  window.EJS_core = core;
+  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+  window.EJS_startOnLoaded = true;
+  
+  const s = document.createElement('script');
+  s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+  
+  // Patched error handler to detect when school network blocks the CDN script
+  s.onerror = () => {
+    const statusBox = document.getElementById('gameStatus');
+    const statusText = document.getElementById('gameStatusText');
+    if (statusBox && statusText) {
+      statusBox.classList.add('error');
+      statusText.innerHTML = '<strong>Blocked by network filter:</strong> Cannot load EmulatorJS script from CDN.<br>Try testing this file on an unrestricted personal network.';
+    }
+  };
+
+  document.body.appendChild(s);
+}
+
+function addRow(name, info, note) {
+  const log = document.getElementById('log');
+  const row = document.createElement('div');
+  row.className = 'row';
+  
+  let badgeHtml = '';
+  if (info) {
+    badgeHtml = `<span class="badge ${info.badge}">${info.label}</span>`;
+  }
+
+  row.innerHTML = `
+    <span class="name">${name}</span>
+    <span style="display:flex; align-items:center; gap:10px;">
+      <span class="note">${note}</span>
+      ${badgeHtml}
+    </span>
+  `;
+  log.prepend(row);
+}
+
+async function handleFile(file) {
+  const info = getCore(file.name);
+  if (!info) {
+    addRow(file.name, null, 'seriously, did you not read what it said');
+    return;
+  }
+
+  if (/pokemon|pok[eé]mon/i.test(file.name)) {
+    const key = 'rom-' + Date.now();
+    await saveBlob(key, file);
+    addRow(file.name, info, 'opening in its own tab…');
+    const url = `${location.pathname}?tab=game&key=${encodeURIComponent(key)}&core=${info.core}&name=${encodeURIComponent(file.name)}`;
+    window.open(url, '_blank');
+  } else {
+    addRow(file.name, info, 'playing below');
+    const playerBox = document.getElementById('player');
+    playerBox.style.display = 'block';
+    playerBox.innerHTML = '<div class="frame" id="inlineFrame"></div>';
+    
+    const blobUrl = URL.createObjectURL(file);
+    bootEmulator('#inlineFrame', blobUrl, info.core);
+    playerBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+const params = new URLSearchParams(location.search);
+
+if (params.get('tab') === 'game') {
+  document.body.classList.add('game-tab');
+  document.getElementById('mainUI').style.display = 'none';
+  document.getElementById('gameRoot').style.display = 'flex';
+  document.title = decodeURIComponent(params.get('name') || 'Game');
+
+  const key = params.get('key');
+  const core = params.get('core');
+  const statusText = document.getElementById('gameStatusText');
+
+  loadBlob(key).then(blob => {
+    if (!blob) {
+      statusText.textContent = 'ROM not found try reopening from the main tab';
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const frame = document.getElementById('gameFrame');
+    frame.style.display = 'block';
+    bootEmulator('#gameFrame', url, core);
+  }).catch(() => {
+    statusText.textContent = 'could not read ROM';
+  });
+} else {
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('fileInput');
+
+  drop.onclick = () => fileInput.click();
+  
+  drop.ondragenter = (e) => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragleave = (e) => { e.preventDefault(); drop.classList.remove('drag'); };
+  drop.ondrop = (e) => {
+    e.preventDefault();
+    drop.classList.remove('drag');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  };
+
+  fileInput.onchange = (e) => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  };
+}
+</script>
+</body>
+</html>
