@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartridge — GBA / GBC / NDS Player</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #0e1016;
+    color: #e7e9f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  body.game-tab {
+    background: #000;
+    overflow: hidden;
+  }
+
+  #gameRoot {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+
+  #gameRoot .frame {
+    width: 100%;
+    height: 100%;
+  }
+
+  #gameStatus {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #8890a4;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-align: center;
+    padding: 20px;
+  }
+
+  #gameStatus .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #5ee0a0;
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+
+  #gameStatus.error .dot {
+    background: #f75555;
+    animation: none;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: #5ee0a0;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-size: 34px;
+    line-height: 1.15;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+    font-weight: 650;
+  }
+
+  .sub {
+    color: #8890a4;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 40px;
+    max-width: 54ch;
+  }
+
+  .chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #262c3a;
+    color: #8890a4;
+  }
+
+  .chip b {
+    color: #e7e9f0;
+    font-weight: 600;
+  }
+
+  .chip.gba { border-color: #6f5d3e; }
+  .chip.gbc { border-color: #455a7f; }
+  .chip.nds { border-color: #654874; }
+
+  #drop {
+    border: 1.5px dashed #262c3a;
+    border-radius: 14px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    background: #161a24;
+  }
+
+  #drop.drag {
+    border-color: #5ee0a0;
+    background: #1a262b;
+  }
+
+  #drop .icon {
+    font-size: 26px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  #drop .main-txt {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  #drop .sub-txt {
+    font-size: 13px;
+    color: #8890a4;
+  }
+
+  #fileInput {
+    display: none;
+  }
+
+  #log {
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: #161a24;
+    border: 1px solid #262c3a;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .row .name {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  .row .badge {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    color: #0e1016;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .row .badge.gba { background: #f7b955; }
+  .row .badge.gbc { background: #7fb0ff; }
+  .row .badge.nds { background: #d97ce0; }
+
+  .row .note {
+    color: #8890a4;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+  }
+
+  #player {
+    margin-top: 28px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #262c3a;
+    background: #000;
+  }
+
+  #player .frame {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+  }
+
+  footer {
+    margin-top: 48px;
+    color: #8890a4;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  footer code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    background: #161a24;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="mainUI" class="wrap">
+  <div class="eyebrow">I liek ducks · </div>
+  <h1>Do stuff or something.</h1>
+  <p class="sub">
+    Accepts <code>.gba</code>, <code>.gbc </code>, and <code>.nds</code> files.
+    If you want to have your game run in a new tab, just put pokemon in the file name (I think)
+  </p>
