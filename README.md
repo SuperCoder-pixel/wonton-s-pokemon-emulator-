@@ -1,1 +1,3 @@
-Fixed version of Evan's GBA/GBC/NDS emulator using 
+Fixed version of Evan's GBA/GBC/NDS emulator using https://cdn.jsdelivr.net/gh/bubblfan/emu@master/ and https://cdn.jsdelivr.net/gh/bubblfan/emu@master/loader.js
+Working on fix if the link gets blocked, we might be a little cooked. We'll see...
+:/
