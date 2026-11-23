@@ -307,11 +307,11 @@ function bootEmulator(mountEl, blobUrl, core) {
   window.EJS_player = mountEl;
   window.EJS_gameUrl = blobUrl;
   window.EJS_core = core;
-  window.EJS_pathtodata = 'https://gba.js.org';
+  window.EJS_pathtodata = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@%3Ccommit-or-tag%3E/data/';
   window.EJS_startOnLoaded = true;
   
   const s = document.createElement('script');
-  s.src = 'https://gba.js.org';
+  s.src = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@%3Ccommit-or-tag%3E/data/';
   document.body.appendChild(s);
 }
 
