@@ -290,7 +290,7 @@ async function saveBlob(key, blob) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put(blob, key);
-    tx.oncomplete = () => resolve();
+  	tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
@@ -317,19 +317,19 @@ function bootEmulator(mountEl, blobUrl, core) {
   window.EJS_player = mountEl;
   window.EJS_gameUrl = blobUrl;
   window.EJS_core = core;
-  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+  // Switched to jsDelivr GitHub mirror path
+  window.EJS_pathtodata = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@master/data/';
   window.EJS_startOnLoaded = true;
   
   const s = document.createElement('script');
-  s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+  s.src = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@master/data/loader.js';
   
-  // Patched error handler to detect when school network blocks the CDN script
   s.onerror = () => {
     const statusBox = document.getElementById('gameStatus');
     const statusText = document.getElementById('gameStatusText');
     if (statusBox && statusText) {
       statusBox.classList.add('error');
-      statusText.innerHTML = '<strong>Blocked by network filter:</strong> Cannot load EmulatorJS script from CDN.<br>Try testing this file on an unrestricted personal network.';
+      statusText.innerHTML = '<strong>Blocked:</strong> Code.org or your school network rejected jsDelivr.<br>Try running this code file at home.';
     }
   };
 
@@ -427,4 +427,3 @@ if (params.get('tab') === 'game') {
 </script>
 </body>
 </html>
- 
