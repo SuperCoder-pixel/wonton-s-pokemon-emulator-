@@ -244,8 +244,7 @@
 
   <div id="drop">
     <div class="icon">＋</div>
-    <div class="main-txt">Drag a ROM hack here, or click here to browse your files</div>
-
+    <div class="main-txt">Drag a ROM hack here or click here to browse your files</div>
   </div>
   <input id="fileInput" type="file" accept=".gba,.gbc,.gb,.nds">
 
@@ -292,7 +291,7 @@ async function loadBlob(key) {
     const tx = db.transaction(STORE, 'readonly');
     const req = tx.objectStore(STORE).get(key);
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(tx.error);
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -375,7 +374,7 @@ if (params.get('tab') === 'game') {
 
   loadBlob(key).then(blob => {
     if (!blob) {
-      statusText.textContent = 'rom not found try reopening from the main tab';
+      statusText.textContent = 'ROM not found try reopening from the main tab';
       return;
     }
     const url = URL.createObjectURL(blob);
@@ -384,7 +383,7 @@ if (params.get('tab') === 'game') {
     frame.style.display = 'block';
     bootEmulator('#gameFrame', url, core);
   }).catch(() => {
-    statusText.textContent = 'could not read rom from storage';
+    statusText.textContent = 'could not read ROM';
   });
 } else {
   const drop = document.getElementById('drop');
