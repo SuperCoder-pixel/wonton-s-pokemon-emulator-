@@ -5,121 +5,247 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cartridge — GBA / GBC / NDS Player</title>
 <style>
-  :root {
-    --bg: #0e1016;
-    --panel: #161a24;
-    --line: #262c3a;
-    --text: #e7e9f0;
-    --muted: #8890a4;
-    --accent: #5ee0a0;
-    --accent-dim: #2c6b52;
-    --gba: #f7b955;
-    --gbc: #7fb0ff;
-    --nds: #d97ce0;
-    --mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  * {
+    box-sizing: border-box;
   }
-  * { box-sizing: border-box; }
+
   html, body {
-    margin: 0; padding: 0; height: 100%;
-    background: var(--bg); color: var(--text);
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #0e1016;
+    color: #e7e9f0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
-  /* ---------- Game-only tab ---------- */
-  body.game-tab { background: #000; overflow: hidden; }
+  body.game-tab {
+    background: #000;
+    overflow: hidden;
+  }
+
   #gameRoot {
-    position: fixed; inset: 0; display: flex;
-    align-items: center; justify-content: center; background: #000;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
   }
-  #gameRoot .frame { width: 100%; height: 100%; }
+
+  #gameRoot .frame {
+    width: 100%;
+    height: 100%;
+  }
+
   #gameStatus {
-    position: fixed; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 10px;
-    color: var(--muted); font-family: var(--mono); font-size: 13px; letter-spacing: .04em;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #8890a4;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
   }
-  #gameStatus .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s infinite ease-in-out; }
-  @keyframes pulse { 0%,100%{ opacity:.25 } 50%{ opacity:1 } }
 
-  /* ---------- Main tab ---------- */
-  .wrap { max-width: 760px; margin: 0 auto; padding: 64px 24px 80px; }
+  #gameStatus .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #5ee0a0;
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+
   .eyebrow {
-    font-family: var(--mono); font-size: 12px; letter-spacing: .16em;
-    color: var(--accent); text-transform: uppercase; margin-bottom: 14px;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: #5ee0a0;
+    text-transform: uppercase;
+    margin-bottom: 14px;
   }
-  h1 {
-    font-size: 34px; line-height: 1.15; margin: 0 0 10px;
-    letter-spacing: -0.01em; font-weight: 650;
-  }
-  .sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0 0 40px; max-width: 54ch; }
 
-  .chips { display: flex; gap: 8px; margin-bottom: 40px; flex-wrap: wrap; }
-  .chip {
-    font-family: var(--mono); font-size: 11px; padding: 5px 10px; border-radius: 5px;
-    border: 1px solid var(--line); color: var(--muted);
+  h1 {
+    font-size: 34px;
+    line-height: 1.15;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+    font-weight: 650;
   }
-  .chip b { color: var(--text); font-weight: 600; }
-  .chip.gba { border-color: color-mix(in srgb, var(--gba) 35%, var(--line)); }
-  .chip.gbc { border-color: color-mix(in srgb, var(--gbc) 35%, var(--line)); }
-  .chip.nds { border-color: color-mix(in srgb, var(--nds) 35%, var(--line)); }
+
+  .sub {
+    color: #8890a4;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 40px;
+    max-width: 54ch;
+  }
+
+  .chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #262c3a;
+    color: #8890a4;
+  }
+
+  .chip b {
+    color: #e7e9f0;
+    font-weight: 600;
+  }
+
+  .chip.gba { border-color: #6f5d3e; }
+  .chip.gbc { border-color: #455a7f; }
+  .chip.nds { border-color: #654874; }
 
   #drop {
-    border: 1.5px dashed var(--line); border-radius: 14px;
-    padding: 48px 24px; text-align: center; cursor: pointer;
-    transition: border-color .15s ease, background .15s ease;
-    background: var(--panel);
+    border: 1.5px dashed #262c3a;
+    border-radius: 14px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    background: #161a24;
   }
-  #drop.drag { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
-  #drop .icon { font-size: 26px; margin-bottom: 12px; opacity: .8; }
-  #drop .main-txt { font-size: 15px; margin-bottom: 4px; }
-  #drop .sub-txt { font-size: 13px; color: var(--muted); }
-  #fileInput { display: none; }
+
+  #drop.drag {
+    border-color: #5ee0a0;
+    background: #1a262b;
+  }
+
+  #drop .icon {
+    font-size: 26px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  #drop .main-txt {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  #drop .sub-txt {
+    font-size: 13px;
+    color: #8890a4;
+  }
+
+  #fileInput {
+    display: none;
+  }
 
   #log {
-    margin-top: 22px; display: flex; flex-direction: column; gap: 8px;
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
+
   .row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 14px; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 10px; font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: #161a24;
+    border: 1px solid #262c3a;
+    border-radius: 10px;
+    font-size: 13px;
   }
-  .row .name { font-family: var(--mono); }
+
+  .row .name {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  }
+
   .row .badge {
-    font-family: var(--mono); font-size: 10px; padding: 3px 7px; border-radius: 4px;
-    color: #0e1016; font-weight: 700; letter-spacing: .03em;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    color: #0e1016;
+    font-weight: 700;
+    letter-spacing: 0.03em;
   }
-  .row .badge.gba { background: var(--gba); }
-  .row .badge.gbc { background: var(--gbc); }
-  .row .badge.nds { background: var(--nds); }
-  .row .note { color: var(--muted); font-family: var(--mono); font-size: 11px; }
 
-  #player { margin-top: 28px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #000; }
-  #player .frame { width: 100%; aspect-ratio: 4/3; }
+  .row .badge.gba { background: #f7b955; }
+  .row .badge.gbc { background: #7fb0ff; }
+  .row .badge.nds { background: #d97ce0; }
 
-  footer { margin-top: 48px; color: var(--muted); font-size: 12px; line-height: 1.7; }
-  footer code { font-family: var(--mono); background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+  .row .note {
+    color: #8890a4;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+  }
+
+  #player {
+    margin-top: 28px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #262c3a;
+    background: #000;
+  }
+
+  #player .frame {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+  }
+
+  footer {
+    margin-top: 48px;
+    color: #8890a4;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  footer code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    background: #161a24;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
 </style>
 </head>
 <body>
 
-<!-- ============ MAIN UI (hidden when this page is the popped-out game tab) ============ -->
 <div id="mainUI" class="wrap">
   <div class="eyebrow">I liek ducks · </div>
   <h1>Do stuff or something.</h1>
   <p class="sub">
-    Accepts <b>.gba</b>, <b>.gbc / .gb</b>, and <b>.nds</b>.
-    If you want to have your game run in a new tab, just put pokemon in the name (I think)
+    Accepts <code>.gba</code>, <code>.gbc </code>, and <code>.nds</code> files.
+    If you want to have your game run in a new tab, just put pokemon in the file name (I think)
   </p>
 
   <div class="chips">
-    <div class="chip gba"><b>GBA</b> · Game Boy Advance</div>
-    <div class="chip gbc"><b>GBC</b> · Game Boy Color</div>
-    <div class="chip nds"><b>NDS</b> · Nintendo DS</div>
+    <div class="chip gba"><b>GBA</b></div>
+    <div class="chip gbc"><b>GBC</b></div>
+    <div class="chip nds"><b>NDS</b></div>
+    <div class="chip hi"><b>Do these look cool?</b></div>
   </div>
 
   <div id="drop">
     <div class="icon">＋</div>
-    <div class="main-txt">Drag a ROM file here, or click to browse your files</div>
-    <div class="sub-txt">.gba · .gbc · .gb · .nds</div>
+    <div class="main-txt">Drag a ROM hack here, or click here to browse your files</div>
+
   </div>
   <input id="fileInput" type="file" accept=".gba,.gbc,.gb,.nds">
 
@@ -127,146 +253,158 @@
   <div id="player" style="display:none"></div>
 
   <footer>
-    Detection is filename-based: any ROM whose name contains <code>pokemon</code> opens in a new tab
-    with only the game canvas with nothing else. Everything else plays inline below.
+    Any ROM whose name contains <code>pokemon</code> opens in a new tab
+    with only the game and nothing else. Everything else plays below.
   </footer>
 </div>
 
-<!-- ============ GAME-ONLY TAB (shown only when opened as ?tab=game&key=...) ============ -->
 <div id="gameRoot" style="display:none">
   <div id="gameStatus"><div class="dot"></div><div id="gameStatusText">loading ROM…</div></div>
   <div id="gameFrame" class="frame" style="display:none"></div>
 </div>
 
 <script>
-(function () {
-  const DB_NAME = 'cartridge-store';
-  const STORE = 'roms';
+const DB_NAME = 'cartridge-store';
+const STORE = 'roms';
 
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
-  async function saveBlob(key, blob) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(blob, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  }
-  async function loadBlob(key) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
-      const req = tx.objectStore(STORE).get(key);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
 
-  function coreFor(filename) {
-    const ext = filename.toLowerCase().split('.').pop();
-    if (ext === 'gba') return { core: 'gba', label: 'GBA', badge: 'gba' };
-    if (ext === 'gbc' || ext === 'gb') return { core: 'gb', label: 'GBC', badge: 'gbc' };
-    if (ext === 'nds') return { core: 'nds', label: 'NDS', badge: 'nds' };
-    return null;
-  }
+async function saveBlob(key, blob) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(blob, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
 
-  function isPokemon(filename) {
-    return /pokemon|pok[eé]mon/i.test(filename);
-  }
+async function loadBlob(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(tx.error);
+  });
+}
 
-  function bootEmulator(mountEl, blobUrl, core) {
-    window.EJS_player = mountEl;
-    window.EJS_gameUrl = blobUrl;
-    window.EJS_core = core;
-    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-    window.EJS_startOnLoaded = true;
-    const s = document.createElement('script');
-    s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-    document.body.appendChild(s);
-  }
+function getCore(filename) {
+  const ext = filename.toLowerCase().split('.').pop();
+  if (ext === 'gba') return { core: 'gba', label: 'GBA', badge: 'gba' };
+  if (ext === 'gbc' || ext === 'gb') return { core: 'gb', label: 'GBC', badge: 'gbc' };
+  if (ext === 'nds') return { core: 'nds', label: 'NDS', badge: 'nds' };
+  return null;
+}
 
-  const params = new URLSearchParams(location.search);
+function bootEmulator(mountEl, blobUrl, core) {
+  window.EJS_player = mountEl;
+  window.EJS_gameUrl = blobUrl;
+  window.EJS_core = core;
+  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+  window.EJS_startOnLoaded = true;
+  
+  const s = document.createElement('script');
+  s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+  document.body.appendChild(s);
+}
 
-  // ---------------- GAME-ONLY TAB ----------------
-  if (params.get('tab') === 'game') {
-    document.body.classList.add('game-tab');
-    document.getElementById('mainUI').style.display = 'none';
-    document.getElementById('gameRoot').style.display = 'flex';
-    document.title = decodeURIComponent(params.get('name') || 'Game');
-
-    const key = params.get('key');
-    const core = params.get('core');
-    const statusText = document.getElementById('gameStatusText');
-
-    loadBlob(key).then(blob => {
-      if (!blob) { statusText.textContent = 'rom not found — reopen from the main tab'; return; }
-      const url = URL.createObjectURL(blob);
-      document.getElementById('gameStatus').style.display = 'none';
-      const frame = document.getElementById('gameFrame');
-      frame.style.display = 'block';
-      bootEmulator('#gameFrame', url, core);
-    }).catch(() => { statusText.textContent = 'could not read rom from storage'; });
-
-    return; // don't run main-tab logic
-  }
-
-  // ---------------- MAIN TAB ----------------
-  const drop = document.getElementById('drop');
-  const fileInput = document.getElementById('fileInput');
+function addRow(name, info, note) {
   const log = document.getElementById('log');
-  const playerBox = document.getElementById('player');
+  const row = document.createElement('div');
+  row.className = 'row';
+  
+  let badgeHtml = '';
+  if (info) {
+    badgeHtml = `<span class="badge ${info.badge}">${info.label}</span>`;
+  }
 
-  drop.addEventListener('click', () => fileInput.click());
-  ['dragenter', 'dragover'].forEach(evt =>
-    drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.add('drag'); }));
-  ['dragleave', 'drop'].forEach(evt =>
-    drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.remove('drag'); }));
-  drop.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-  fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+  row.innerHTML = `
+    <span class="name">${name}</span>
+    <span style="display:flex; align-items:center; gap:10px;">
+      <span class="note">${note}</span>
+      ${badgeHtml}
+    </span>
+  `;
+  log.prepend(row);
+}
 
-  async function handleFile(file) {
-    const info = coreFor(file.name);
-    if (!info) {
-      addRow(file.name, null, 'unsupported file type use .gba, .gbc, .gb, or .nds, seriously though, did you not read what it says');
+async function handleFile(file) {
+  const info = getCore(file.name);
+  if (!info) {
+    addRow(file.name, null, 'seriously, did you not read what it said');
+    return;
+  }
+
+  if (/pokemon|pok[eé]mon/i.test(file.name)) {
+    const key = 'rom-' + Date.now();
+    await saveBlob(key, file);
+    addRow(file.name, info, 'opening in its own tab…');
+    const url = `${location.pathname}?tab=game&key=${encodeURIComponent(key)}&core=${info.core}&name=${encodeURIComponent(file.name)}`;
+    window.open(url, '_blank');
+  } else {
+    addRow(file.name, info, 'playing below');
+    const playerBox = document.getElementById('player');
+    playerBox.style.display = 'block';
+    playerBox.innerHTML = '<div class="frame" id="inlineFrame"></div>';
+    
+    const blobUrl = URL.createObjectURL(file);
+    bootEmulator('#inlineFrame', blobUrl, info.core);
+    playerBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+const params = new URLSearchParams(location.search);
+
+if (params.get('tab') === 'game') {
+  document.body.classList.add('game-tab');
+  document.getElementById('mainUI').style.display = 'none';
+  document.getElementById('gameRoot').style.display = 'flex';
+  document.title = decodeURIComponent(params.get('name') || 'Game');
+
+  const key = params.get('key');
+  const core = params.get('core');
+  const statusText = document.getElementById('gameStatusText');
+
+  loadBlob(key).then(blob => {
+    if (!blob) {
+      statusText.textContent = 'rom not found try reopening from the main tab';
       return;
     }
+    const url = URL.createObjectURL(blob);
+    document.getElementById('gameStatus').style.display = 'none';
+    const frame = document.getElementById('gameFrame');
+    frame.style.display = 'block';
+    bootEmulator('#gameFrame', url, core);
+  }).catch(() => {
+    statusText.textContent = 'could not read rom from storage';
+  });
+} else {
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('fileInput');
 
-    if (isPokemon(file.name)) {
-      const key = 'rom-' + Date.now();
-      await saveBlob(key, file);
-      addRow(file.name, info, 'opening in its own tab…');
-      const url = `${location.pathname}?tab=game&key=${encodeURIComponent(key)}&core=${info.core}&name=${encodeURIComponent(file.name)}`;
-      window.open(url, '_blank');
-    } else {
-      addRow(file.name, info, 'playing below');
-      playerBox.style.display = 'block';
-      playerBox.innerHTML = '<div class="frame" id="inlineFrame"></div>';
-      const blobUrl = URL.createObjectURL(file);
-      bootEmulator('#inlineFrame', blobUrl, info.core);
-      playerBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
+  drop.onclick = () => fileInput.click();
+  
+  drop.ondragenter = (e) => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragleave = (e) => { e.preventDefault(); drop.classList.remove('drag'); };
+  drop.ondrop = (e) => {
+    e.preventDefault();
+    drop.classList.remove('drag');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  };
 
-  function addRow(name, info, note) {
-    const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `
-      <span class="name">${name}</span>
-      <span style="display:flex; align-items:center; gap:10px;">
-        <span class="note">${note}</span>
-        ${info ? `<span class="badge ${info.badge}">${info.label}</span>` : ''}
-      </span>`;
-    log.prepend(row);
-  }
-})();
+  fileInput.onchange = (e) => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  };
+}
 </script>
 </body>
 </html>
