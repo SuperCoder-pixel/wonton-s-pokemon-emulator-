@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartridge — GBA / GBC / NDS Player</title>
+<style>
+  :root {
+    --shell: #c7c5be;
+    --shell-light: #dad8d2;
+    --shell-dark: #9c9a92;
+    --bezel: #585663;
+    --bezel-dark: #3b3944;
+    --lcd-bg: #8bac0f;
+    --lcd-dark: #306230;
+    --ink: #1b1b22;
+    --muted: #52515a;
+    --magenta: #8b1e41;
+    --navy: #24306e;
+    --led-red: #ff2a2a;
+    --gba: #4f43ae;
+    --gbc: #00827f;
+    --nds: #b82956;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: #232329;
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body.game-tab {
+    background: #000;
+    overflow: hidden;
+  }
+
+  #gameRoot {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+
+  #gameRoot .frame {
+    width: 100%;
+    height: 100%;
+  }
+
+  #gameStatus {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #a1a1aa;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+  }
+
+  #gameStatus .dot {
+    width: 10px;
+    height: 10px;
+    background: var(--led-red);
+    animation: blink 1s steps(2, start) infinite;
+  }
+
+  @keyframes blink {
+    to { visibility: hidden; }
+  }
+
+  /* Outer Game Boy Console Body */
+  .gameboy-shell {
+    max-width: 780px;
+    margin: 28px auto 48px;
+    background: var(--shell);
+    border: 3px solid #141418;
+    border-radius: 14px 14px 72px 14px;
+    box-shadow:
+      inset 4px 4px 0px var(--shell-light),
+      inset -6px -6px 0px var(--shell-dark),
+      0 24px 60px rgba(0, 0, 0, 0.65);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Top Ridge & On/Off Switch Groove */
+  .gb-top-ridge {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 28px;
+    border-bottom: 3px solid var(--shell-dark);
+    background: linear-gradient(to bottom, var(--shell-light), var(--shell));
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .on-off-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--shell-dark);
+    color: var(--shell-light);
+    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.35);
+  }
+
+  .wrap {
+    padding: 36px 36px 40px;
+  }
+
+  header {
+    margin-bottom: 26px;
+  }
+
+  .brand-stamp {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .brand-nintendo {
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: var(--navy);
+  }
+
+  .brand-gb {
+    font-style: italic;
+    font-weight: 900;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+  }
+
+  h1 {
+    font-size: 34px;
+    line-height: 1.08;
+    margin: 0 0 10px;
+    letter-spacing: -0.03em;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .sub {
+    color: var(--muted);
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0;
+    max-width: 56ch;
+  }
+
+  .sub code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--shell-light);
+    color: var(--ink);
+    border: 1px solid var(--shell-dark);
+    padding: 1px 5px;
+    font-size: 12.5px;
+  }
+
+  /* Format Spec Bar */
+  .spec-bar {
+    display: flex;
+    flex-wrap: wrap;
+    border: 2px solid var(--ink);
+    background: var(--shell-light);
+    margin-bottom: 24px;
+    box-shadow: 4px 4px 0px var(--shell-dark);
+  }
+
+  .chip {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-right: 2px solid var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chip:last-child {
+    border-right: none;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .chip::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    display: inline-block;
+  }
+
+  .chip.gba::before { background: var(--gba); }
+  .chip.gbc::before { background: var(--gbc); }
+  .chip.nds::before { background: var(--nds); }
+  .chip.hi::before  { display: none; }
+
+  /* Cartridge Slot Dropzone */
+  #drop {
+    border: 3px solid var(--ink);
+    background: #b7b5ae;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow:
+      inset 0 6px 10px rgba(0, 0, 0, 0.2),
+      0 3px 0 var(--shell-light);
+    transition: background 0.12s ease, transform 0.1s ease;
+    position: relative;
+  }
+
+  #drop:hover {
+    background: #c2c0b9;
+  }
+
+  #drop:active, #drop.drag {
+    transform: translateY(2px);
+    background: #9fb834;
+    box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Molded Cartridge Grip Lines */
+  .cartridge-ridges {
+    width: 160px;
+    margin: 0 auto 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .cartridge-ridges span {
+    display: block;
+    height: 3px;
+    background: var(--shell-dark);
+    border-bottom: 1px solid var(--shell-light);
+  }
+
+  #drop .main-txt {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+
+  #drop .sub-txt {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  #fileInput {
+    display: none;
+  }
+
+  /* Log Rows */
+  #log {
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 14px;
+    background: var(--shell-light);
+    border: 2px solid var(--ink);
+    box-shadow: 3px 3px 0px var(--shell-dark);
+    font-size: 13px;
+  }
+
+  .row .name {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+  }
+
+  .row .badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    color: #fff;
+    font-weight: 700;
+    border: 1px solid var(--ink);
+  }
+
+  .row .badge.gba { background: var(--gba); }
+  .row .badge.gbc { background: var(--gbc); }
+  .row .badge.nds { background: var(--nds); }
+
+  .row .note {
+    color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+  }
+
+  /* GAME BOY SCREEN LENS (Behind the Game when scrolled down) */
+  #player {
+    margin-top: 34px;
+    background: var(--bezel);
+    border: 3px solid #1e1d24;
+    border-radius: 12px 12px 46px 12px;
+    padding: 18px 22px 26px;
+    box-shadow:
+      inset 2px 2px 0 rgba(255, 255, 255, 0.14),
+      inset -3px -3px 0 var(--bezel-dark),
+      0 8px 0 var(--shell-dark);
+  }
+
+  /* Iconic Magenta & Navy Bezel Stripes */
+  .screen-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .screen-stripes {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .screen-stripes::before {
+    content: "";
+    height: 2px;
+    background: var(--magenta);
+  }
+
+  .screen-stripes::after {
+    content: "";
+    height: 2px;
+    background: var(--navy);
+  }
+
+  .screen-title {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #d4d3dc;
+    white-space: nowrap;
+  }
+
+  .screen-body {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* Glowing Red Battery LED */
+  .battery-housing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 44px;
+  }
+
+  .battery-led {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--led-red);
+    box-shadow: 0 0 8px var(--led-red), 0 0 14px rgba(255, 42, 42, 0.7);
+    border: 1px solid #4a0a0a;
+  }
+
+  .battery-label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #c5c4ce;
+  }
+
+  /* Olive Green DMG-01 LCD Frame */
+  .lcd-well {
+    flex: 1;
+    background: var(--lcd-bg);
+    padding: 8px;
+    border: 4px solid #2b2a33;
+    box-shadow:
+      inset 4px 4px 10px rgba(15, 56, 15, 0.55),
+      inset -2px -2px 6px rgba(155, 188, 15, 0.4);
+  }
+
+  #player .frame {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #0f380f;
+    display: block;
+  }
+
+  /* Decorative Hardware Controls Below Screen */
+  .gb-controls-deck {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 2px solid var(--shell-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .dpad {
+    position: relative;
+    width: 78px;
+    height: 78px;
+    flex-shrink: 0;
+  }
+
+  .dpad-h, .dpad-v {
+    position: absolute;
+    background: #232329;
+    border-radius: 4px;
+    box-shadow: 0 4px 0 #111115;
+  }
+
+  .dpad-h {
+    top: 26px;
+    left: 0;
+    width: 78px;
+    height: 26px;
+  }
+
+  .dpad-v {
+    top: 0;
+    left: 26px;
+    width: 26px;
+    height: 78px;
+  }
+
+  .dpad-center {
+    position: absolute;
+    top: 31px;
+    left: 31px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #18181c, #2c2c34);
+  }
+
+  .select-start {
+    display: flex;
+    gap: 14px;
+    transform: rotate(-25deg);
+    margin-top: 24px;
+  }
+
+  .pill-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pill-btn {
+    width: 34px;
+    height: 10px;
+    border-radius: 999px;
+    background: #6f6d75;
+    border: 1px solid #3c3b42;
+    box-shadow: 0 2px 0 #3c3b42;
+  }
+
+  .pill-btn-wrap span {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--navy);
+  }
+
+  .ab-cluster {
+    display: flex;
+    gap: 14px;
+    transform: rotate(-25deg);
+    background: var(--shell-dark);
+    padding: 8px 12px;
+    border-radius: 999px;
+    box-shadow: inset 1px 1px 3px rgba(0,0,0,0.25);
+  }
+
+  .ab-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ab-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--magenta);
+    border: 2px solid #4d0e22;
+    box-shadow:
+      inset 2px 2px 3px rgba(255,255,255,0.25),
+      0 3px 0 #3a0918;
+  }
+
+  .ab-btn-wrap span {
+    font-size: 11px;
+    font-weight: 900;
+    color: var(--navy);
+  }
+
+  footer {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 2px solid var(--shell-dark);
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.6;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+  }
+
+  footer code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--shell-light);
+    color: var(--ink);
+    border: 1px solid var(--shell-dark);
+    padding: 1px 5px;
+    font-size: 11.5px;
+  }
+
+  /* Diagonal Speaker Grilles in Bottom Right */
+  .speaker-grille {
+    display: flex;
+    gap: 7px;
+    transform: rotate(-28deg);
+    padding-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .speaker-grille span {
+    width: 5px;
+    height: 36px;
+    border-radius: 999px;
+    background: #333238;
+    box-shadow: inset 1px 1px 2px #000, 1px 1px 0 var(--shell-light);
+  }
+
+  @media (max-width: 600px) {
+    .gameboy-shell {
+      margin: 0;
+      border-radius: 0 0 48px 0;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+    }
+    .wrap {
+      padding: 24px 18px 36px;
+    }
+    .screen-body {
+      flex-direction: column;
+      gap: 10px;
+    }
+    .battery-housing {
+      flex-direction: row;
+    }
+    .chip:last-child {
+      border-top: 2px solid var(--ink);
+      width: 100%;
+      margin-left: 0;
+    }
+    .gb-controls-deck {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="mainUI" class="gameboy-shell">
+  <div class="gb-top-ridge">
+    <span class="on-off-pill">◄ OFF · ON ►</span>
+    <span>Release 1.1.1</span>
+  </div>
+
+  <div class="wrap">
+    <header>
+      <div class="brand-stamp">
+        <span class="brand-nintendo">CARTRIDGE</span>
+        <span class="brand-gb">GAME BOY™</span>
+      </div>
+      <h1>Do stuff or something.</h1>
+      <p class="sub">
+        Accepts <code>.gba</code>, <code>.gbc</code>, and <code>.nds</code> files.
+        If you want to have your game run in a new tab, just put <code>Pokemon</code> in the file name. The buttons don't actually work lmao, I hope no one tries that.
+      </p>
+    </header>
+
+    <div class="spec-bar">
+      <div class="chip gba"><b>GBA</b></div>
+      <div class="chip gbc"><b>GBC</b></div>
+      <div class="chip nds"><b>NDS</b></div>
+      <div class="chip hi">Does this look okey?</div>
+    </div>
+
+    <div id="drop">
+      <div class="cartridge-ridges">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="main-txt">Insert Cartridge (Drag ROM here or click to browse)</div>
+      <div class="sub-txt">SUPPORTS .GBA / .GBC / .GB / .NDS</div>
+    </div>
+    <input id="fileInput" type="file" accept=".gba,.gbc,.gb,.nds">
+
+    <div id="log"></div>
+
+    <!-- Game Boy Screen Lens Housing -->
+    <div id="player" style="display:none">
+      <div class="screen-header">
+        <div class="screen-stripes"></div>
+        <div class="screen-title">DOT MATRIX WITH STEREO SOUND</div>
+        <div class="screen-stripes"></div>
+      </div>
+      <div class="screen-body">
+        <div class="battery-housing">
+          <div class="battery-led"></div>
+          <div class="battery-label">BATTERY</div>
+        </div>
+        <div class="lcd-well" id="lcdMount"></div>
+      </div>
+    </div>
+
+    <!-- Tactile Hardware Controls -->
+    <div class="gb-controls-deck" aria-hidden="true">
+      <div class="dpad">
+        <div class="dpad-h"></div>
+        <div class="dpad-v"></div>
+        <div class="dpad-center"></div>
+      </div>
+
+      <div class="select-start">
+        <div class="pill-btn-wrap">
+          <div class="pill-btn"></div>
+          <span>SELECT</span>
+        </div>
+        <div class="pill-btn-wrap">
+          <div class="pill-btn"></div>
+          <span>START</span>
+        </div>
+      </div>
+
+      <div class="ab-cluster">
+        <div class="ab-btn-wrap">
+          <div class="ab-btn"></div>
+          <span>B</span>
+        </div>
+        <div class="ab-btn-wrap">
+          <div class="ab-btn"></div>
+          <span>A</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div>
+        Any ROM hack file whose name contains <code>pokemon</code> opens in a new tab
+        with only the game and nothing else. Everything else plays in the screen above (the screen will appear once you upload a ROM).
+      </div>
+      <div class="speaker-grille" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<div id="gameRoot" style="display:none">
+  <div id="gameStatus"><div class="dot"></div><div id="gameStatusText">loading ROM…</div></div>
+  <div id="gameFrame" class="frame" style="display:none"></div>
+</div>
+
+<script>
+const DB_NAME = 'cartridge-store';
+const STORE = 'roms';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveBlob(key, blob) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(blob, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadBlob(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getCore(filename) {
+  const ext = filename.toLowerCase().split('.').pop();
+  if (ext === 'gba') return { core: 'gba', label: 'GBA', badge: 'gba' };
+  if (ext === 'gbc' || ext === 'gb') return { core: 'gb', label: 'GBC', badge: 'gbc' };
+  if (ext === 'nds') return { core: 'nds', label: 'NDS', badge: 'nds' };
+  return null;
+}
+
+function bootEmulator(mountEl, blobUrl, core) {
+  window.EJS_player = mountEl;
+  window.EJS_gameUrl = blobUrl;
+  window.EJS_core = core;
+  window.EJS_pathtodata = 'https://cdn.jsdelivr.net/gh/bubblfan/emu@master/';
+  window.EJS_startOnLoaded = true;
+  
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/gh/bubblfan/emu@master/loader.js';
+  document.body.appendChild(s);
+}
+
+function addRow(name, info, note) {
+  const log = document.getElementById('log');
+  const row = document.createElement('div');
+  row.className = 'row';
+  
+  let badgeHtml = '';
+  if (info) {
+    badgeHtml = `<span class="badge ${info.badge}">${info.label}</span>`;
+  }
+
+  row.innerHTML = `
+    <span class="name">${name}</span>
+    <span style="display:flex; align-items:center; gap:10px;">
+      <span class="note">${note}</span>
+      ${badgeHtml}
+    </span>
+  `;
+  log.prepend(row);
+}
+
+async function handleFile(file) {
+  const info = getCore(file.name);
+  if (!info) {
+    addRow(file.name, null, 'seriously, did you not read what it said?');
+    return;
+  }
+
+  if (/pokemon|pok[eé]mon/i.test(file.name)) {
+    const key = 'rom-' + Date.now();
+    await saveBlob(key, file);
+    addRow(file.name, info, 'opening in its own tab…');
+    const url = `${location.pathname}?tab=game&key=${encodeURIComponent(key)}&core=${info.core}&name=${encodeURIComponent(file.name)}`;
+    window.open(url, '_blank');
+  } else {
+    addRow(file.name, info, 'playing below');
+    const playerBox = document.getElementById('player');
+    const lcdMount = document.getElementById('lcdMount');
+    playerBox.style.display = 'block';
+    lcdMount.innerHTML = '<div class="frame" id="inlineFrame"></div>';
+    
+    const blobUrl = URL.createObjectURL(file);
+    bootEmulator('#inlineFrame', blobUrl, info.core);
+    playerBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+const params = new URLSearchParams(location.search);
+
+if (params.get('tab') === 'game') {
+  document.body.classList.add('game-tab');
+  document.getElementById('mainUI').style.display = 'none';
+  document.getElementById('gameRoot').style.display = 'flex';
+  document.title = decodeURIComponent(params.get('name') || 'Game');
+
+  const key = params.get('key');
+  const core = params.get('core');
+  const statusText = document.getElementById('gameStatusText');
+
+  loadBlob(key).then(blob => {
+    if (!blob) {
+      statusText.textContent = 'ROM not found try reopening from the main tab';
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    document.getElementById('gameStatus').style.display = 'none';
+    const frame = document.getElementById('gameFrame');
+    frame.style.display = 'block';
+    bootEmulator('#gameFrame', url, core);
+  }).catch(() => {
+    statusText.textContent = 'could not read ROM';
+  });
+} else {
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('fileInput');
+
+  drop.onclick = () => fileInput.click();
+  
+  drop.ondragenter = (e) => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragleave = (e) => { e.preventDefault(); drop.classList.remove('drag'); };
+  drop.ondrop = (e) => {
+    e.preventDefault();
+    drop.classList.remove('drag');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  };
+
+  fileInput.onchange = (e) => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  };
+}
+</script>
+</body>
+</html>
