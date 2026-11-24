@@ -233,7 +233,6 @@
   <h1>Do stuff or something.</h1>
   <p class="sub">
     Accepts <code>.gba</code>, <code>.gbc </code>, and <code>.nds</code> files.
-    If you want to have your game run in a new tab, just put pokemon in the file name (I think)
   </p>
 
   <div class="chips">
@@ -253,8 +252,7 @@
   <div id="player" style="display:none"></div>
 
   <footer>
-    Any ROM whose name contains <code>pokemon</code> opens in a new tab
-    with only the game and nothing else. Everything else plays below.
+    ROM plays below.
   </footer>
 </div>
 
@@ -341,14 +339,7 @@ async function handleFile(file) {
   if (!info) {
     addRow(file.name, null, 'seriously, did you not read what it said');
     return;
-  }
-
-  if (/pokemon|pok[eé]mon/i.test(file.name)) {
-    const key = 'rom-' + Date.now();
-    await saveBlob(key, file);
-    addRow(file.name, info, 'opening in its own tab…');
-    const url = `${location.pathname}?tab=game&key=${encodeURIComponent(key)}&core=${info.core}&name=${encodeURIComponent(file.name)}`;
-    window.open(url, '_blank');
+   
   } else {
     addRow(file.name, info, 'playing below');
     const playerBox = document.getElementById('player');
