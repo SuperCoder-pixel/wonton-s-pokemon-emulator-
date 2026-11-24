@@ -6,5 +6,6 @@ davey_fix was a fix initially made by @SuperCoder-pixel(not me) I forgot his git
 
 ABLE TO BYPASS SCHOOL BLOCKAGES
 
-Davey(@SuperCoder-pizel) found a working emulator link, so the patch has been applied to davey_fix in both repositories, his fork and the original.
+Davey(@SuperCoder-pixel) found a working emulator link, so the patch has been applied to davey_fix in both repositories, his fork and the original.
 
+hey @SuperCoder-pixel, please dont doxx me lmao 
