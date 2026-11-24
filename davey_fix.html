@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cartridge</title>
+<title>Cartridge — GBA / GBC / NDS Player</title>
 <style>
-  * {
+  *, *::before, *::after {
     box-sizing: border-box;
   }
 
@@ -119,6 +119,7 @@
   .chip.gba { border-color: #6f5d3e; }
   .chip.gbc { border-color: #455a7f; }
   .chip.nds { border-color: #654874; }
+  .chip.hi  { border-color: #3b7a57; }
 
   #drop {
     border: 1.5px dashed #262c3a;
@@ -311,7 +312,7 @@ function bootEmulator(mountEl, blobUrl, core) {
   window.EJS_startOnLoaded = true;
   
   const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/gh/bubblfan/emu@master/loader.js/';
+  s.src = 'https://cdn.jsdelivr.net/gh/bubblfan/emu@master/loader.js';
   document.body.appendChild(s);
 }
 
