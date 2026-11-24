@@ -614,7 +614,7 @@
       <h1>Do stuff or something.</h1>
       <p class="sub">
         Accepts <code>.gba</code>, <code>.gbc</code>, and <code>.nds</code> files.
-        If you want to have your game run in a new tab, just put <code>Pokemon</code> in the file name. The buttons don't actually work lmao, I hope no one tries that.
+        The buttons don't actually work lmao, I hope no one tries that.
       </p>
     </header>
 
@@ -687,8 +687,7 @@
 
     <footer>
       <div>
-        Any ROM hack file whose name contains <code>pokemon</code> opens in a new tab
-        with only the game and nothing else. Everything else plays in the screen above (the screen will appear once you upload a ROM).
+        Everything else plays in the screen above (the screen will appear once you upload a ROM).
       </div>
       <div class="speaker-grille" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span><span></span>
@@ -782,7 +781,7 @@ async function handleFile(file) {
     return;
   }
 
-  if (/pokemon|pok[eé]mon/i.test(file.name)) {
+  if (True == False) {
     const key = 'rom-' + Date.now();
     await saveBlob(key, file);
     addRow(file.name, info, 'opening in its own tab…');
